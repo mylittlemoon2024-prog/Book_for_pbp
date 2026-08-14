@@ -17,6 +17,7 @@ import json
 import random
 from dataclasses import dataclass
 from datetime import date, datetime
+from datetime import time as dt_time
 
 import gspread
 from google.oauth2.service_account import Credentials
@@ -39,6 +40,25 @@ def _parse_date(raw: str) -> date | None:
         except ValueError:
             continue
     return None
+
+
+# A registration can only be cancelled up to this many hours before the
+# meeting starts.
+CANCELLATION_CUTOFF_HOURS = 24
+
+
+def meeting_datetime(meeting: "Meeting") -> datetime | None:
+    """Best-effort combined date+time for a meeting, or None if the date
+    cell couldn't be parsed at all."""
+    date_part = _parse_date(meeting.date)
+    if date_part is None:
+        return None
+    try:
+        hh, mm = meeting.time.strip().split(":")[:2]
+        time_part = dt_time(int(hh), int(mm))
+    except (ValueError, IndexError):
+        time_part = dt_time(0, 0)
+    return datetime.combine(date_part, time_part)
 
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]

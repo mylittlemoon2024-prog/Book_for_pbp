@@ -1,12 +1,13 @@
 """Handlers for browsing meetings and registering/cancelling attendance."""
 import asyncio
+from datetime import datetime, timedelta
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from bot.keyboards import cancel_fsm_kb, consent_kb, main_menu_kb, meeting_card_kb, meetings_list_kb
-from bot.services.sheets import Meeting, SheetsService
+from bot.services.sheets import CANCELLATION_CUTOFF_HOURS, Meeting, SheetsService, meeting_datetime
 from bot.states import RegistrationForm
 
 router = Router(name="registration")
@@ -21,7 +22,17 @@ REGISTRATION_CONSENT_TEXT = (
 )
 
 
-def _meeting_card_text(meeting: Meeting, taken: int, is_registered: bool) -> str:
+def _can_cancel(meeting: Meeting) -> bool:
+    """Cancellation is only allowed up to CANCELLATION_CUTOFF_HOURS before
+    the meeting starts. A meeting whose date/time can't be parsed is treated
+    as still cancellable rather than silently locking users out."""
+    dt = meeting_datetime(meeting)
+    if dt is None:
+        return True
+    return dt - datetime.now() >= timedelta(hours=CANCELLATION_CUTOFF_HOURS)
+
+
+def _meeting_card_text(meeting: Meeting, taken: int, is_registered: bool, can_cancel: bool) -> str:
     text = (
         f"<b>{meeting.title}</b>\n"
         f"🗓 {meeting.date} в {meeting.time}\n"
@@ -33,6 +44,13 @@ def _meeting_card_text(meeting: Meeting, taken: int, is_registered: bool) -> str
         text += f"\n👥 Занято мест: {taken}/{meeting.capacity}"
     if is_registered:
         text += "\n\n✅ Вы записаны на эту встречу"
+        if can_cancel:
+            text += (
+                f"\nОтменить запись можно не позднее чем за "
+                f"{CANCELLATION_CUTOFF_HOURS} ч. до встречи."
+            )
+        else:
+            text += "\n⏰ Срок отмены записи истёк."
     return text
 
 
@@ -46,10 +64,14 @@ async def _show_meeting_card(callback: CallbackQuery, meeting_id: str) -> None:
         sheets.get_user_registration, meeting_id, callback.from_user.id
     )
     taken = await asyncio.to_thread(sheets.count_active_registrations, meeting_id)
+    can_cancel = _can_cancel(meeting)
 
-    text = _meeting_card_text(meeting, taken, is_registered=bool(registration))
+    text = _meeting_card_text(meeting, taken, is_registered=bool(registration), can_cancel=can_cancel)
     await callback.message.edit_text(
-        text, reply_markup=meeting_card_kb(meeting_id, is_registered=bool(registration))
+        text,
+        reply_markup=meeting_card_kb(
+            meeting_id, is_registered=bool(registration), can_cancel=can_cancel
+        ),
     )
 
 
@@ -78,6 +100,16 @@ async def cb_meeting_card(callback: CallbackQuery) -> None:
 @router.callback_query(F.data.startswith("cancel:"))
 async def cb_cancel_registration(callback: CallbackQuery) -> None:
     meeting_id = callback.data.split(":", 1)[1]
+    meeting = await asyncio.to_thread(sheets.get_meeting, meeting_id)
+    if meeting is not None and not _can_cancel(meeting):
+        await callback.answer(
+            f"Отменить запись можно не позднее чем за {CANCELLATION_CUTOFF_HOURS} ч. "
+            "до встречи — срок уже истёк.",
+            show_alert=True,
+        )
+        await _show_meeting_card(callback, meeting_id)
+        return
+
     cancelled = await asyncio.to_thread(
         sheets.cancel_registration, meeting_id, callback.from_user.id
     )

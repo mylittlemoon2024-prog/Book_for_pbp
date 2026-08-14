@@ -61,10 +61,13 @@ def meetings_list_kb(meetings: list[Meeting]) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
-def meeting_card_kb(meeting_id: str, is_registered: bool) -> InlineKeyboardMarkup:
+def meeting_card_kb(
+    meeting_id: str, is_registered: bool, can_cancel: bool = True
+) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     if is_registered:
-        builder.button(text="❌ Отменить запись", callback_data=f"cancel:{meeting_id}")
+        if can_cancel:
+            builder.button(text="❌ Отменить запись", callback_data=f"cancel:{meeting_id}")
     else:
         builder.button(text="✅ Записаться", callback_data=f"register:{meeting_id}")
     builder.button(text="⬅️ К списку встреч", callback_data="list_meetings")
