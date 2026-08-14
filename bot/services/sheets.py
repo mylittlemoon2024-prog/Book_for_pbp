@@ -53,7 +53,11 @@ REGISTRATIONS_HEADER = [
     "registered_at",
     "status",
 ]
-BOOKS_HEADER = ["id", "genre", "title", "author", "description", "photo_url"]
+BOOKS_HEADER = ["id", "genre", "title", "author", "description", "photo_url", "age_rating"]
+
+# Russian legal age-rating marks (ФЗ-436), used to validate the age_rating
+# cell — anything else is treated as unset rather than shown to users.
+AGE_RATINGS = ("0+", "6+", "12+", "16+", "18+")
 
 # Fixed genre taxonomy for the "Choose a book" catalog — shown in this exact
 # order regardless of which genres currently have books in the sheet, so the
@@ -101,9 +105,13 @@ class Book:
     author: str
     description: str
     photo_url: str
+    age_rating: str = ""
 
     def caption(self) -> str:
-        text = f"<b>{self.title}</b>\n👤 {self.author}"
+        title_line = f"<b>{self.title}</b>"
+        if self.age_rating:
+            title_line += f"  🔞 {self.age_rating}" if self.age_rating == "18+" else f"  {self.age_rating}"
+        text = f"{title_line}\n👤 {self.author}"
         if self.description:
             text += f"\n\n{self.description}"
         return text
@@ -258,6 +266,7 @@ class SheetsService:
             title = str(row.get("title", "")).strip()
             if not genre or not title:
                 continue
+            age_rating = str(row.get("age_rating", "")).strip()
             books.append(
                 Book(
                     id=str(row.get("id", "")),
@@ -266,6 +275,7 @@ class SheetsService:
                     author=str(row.get("author", "")),
                     description=str(row.get("description", "")),
                     photo_url=str(row.get("photo_url", "")).strip(),
+                    age_rating=age_rating if age_rating in AGE_RATINGS else "",
                 )
             )
         return books
