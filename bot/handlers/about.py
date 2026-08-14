@@ -68,7 +68,7 @@ async def process_suggestion_name(message: Message, state: FSMContext) -> None:
     await state.update_data(name=name)
     await state.set_state(SuggestionForm.text)
     await message.answer(
-        "Какое у вас предложение? Пишите как есть — мы всё прочитаем.",
+        "Какое у вас предложение?\nПишите как есть — мы всё прочитаем.",
         reply_markup=cancel_fsm_kb(),
     )
 
