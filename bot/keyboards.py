@@ -10,7 +10,23 @@ def main_menu_kb() -> InlineKeyboardMarkup:
     builder.button(text="📅 Ближайшие встречи", callback_data="list_meetings")
     builder.button(text="📚 Выбрать книгу", callback_data="browse_books")
     builder.button(text="📝 Мои записи", callback_data="my_registrations")
+    builder.button(text="ℹ️ О проекте", callback_data="about_project")
+    builder.button(text="🤝 Сотрудничество", callback_data="cooperation")
     builder.adjust(1)
+    return builder.as_markup()
+
+
+def about_kb() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text="💡 Оставить предложение", callback_data="leave_suggestion")
+    builder.button(text="⬅️ В меню", callback_data="main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def back_to_menu_kb() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text="⬅️ В меню", callback_data="main_menu")
     return builder.as_markup()
 
 

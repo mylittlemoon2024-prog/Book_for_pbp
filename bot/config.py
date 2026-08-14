@@ -30,6 +30,7 @@ class Settings:
     meetings_sheet: str
     registrations_sheet: str
     books_sheet: str
+    suggestions_sheet: str
     admin_ids: tuple[int, ...]
 
 
@@ -44,5 +45,6 @@ settings = Settings(
     meetings_sheet=os.getenv("MEETINGS_SHEET", "Meetings"),
     registrations_sheet=os.getenv("REGISTRATIONS_SHEET", "Registrations"),
     books_sheet=os.getenv("BOOKS_SHEET", "Books"),
+    suggestions_sheet=os.getenv("SUGGESTIONS_SHEET", "Suggestions"),
     admin_ids=_load_admin_ids(),
 )

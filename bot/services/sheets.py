@@ -1,11 +1,12 @@
-"""Thin wrapper around Google Sheets used as storage for meetings, registrations
-and the book catalog.
+"""Thin wrapper around Google Sheets used as storage for meetings, registrations,
+the book catalog and user suggestions.
 
-Three worksheets are used inside a single spreadsheet:
+Four worksheets are used inside a single spreadsheet:
 
 Meetings:       id | title | date (YYYY-MM-DD) | time | location | capacity | description
 Registrations:  meeting_id | user_id | username | full_name | phone | registered_at | status
 Books:          id | genre | title | author | description | photo_url
+Suggestions:    name | suggestion | user_id | username | submitted_at
 
 gspread calls are blocking, so callers should run them via asyncio.to_thread
 to avoid blocking the bot's event loop.
@@ -35,6 +36,7 @@ REGISTRATIONS_HEADER = [
     "status",
 ]
 BOOKS_HEADER = ["id", "genre", "title", "author", "description", "photo_url"]
+SUGGESTIONS_HEADER = ["name", "suggestion", "user_id", "username", "submitted_at"]
 
 STATUS_ACTIVE = "active"
 STATUS_CANCELLED = "cancelled"
@@ -92,6 +94,9 @@ class SheetsService:
             spreadsheet, settings.registrations_sheet, REGISTRATIONS_HEADER
         )
         self._books_ws = self._get_or_create(spreadsheet, settings.books_sheet, BOOKS_HEADER)
+        self._suggestions_ws = self._get_or_create(
+            spreadsheet, settings.suggestions_sheet, SUGGESTIONS_HEADER
+        )
 
     @staticmethod
     def _get_or_create(spreadsheet: gspread.Spreadsheet, title: str, header: list[str]):
@@ -240,3 +245,16 @@ class SheetsService:
         if exclude_id is not None and len(candidates) > 1:
             candidates = [b for b in candidates if b.id != exclude_id]
         return random.choice(candidates)
+
+    # ---- suggestions ------------------------------------------------------
+
+    def add_suggestion(self, name: str, suggestion: str, user_id: int, username: str) -> None:
+        self._suggestions_ws.append_row(
+            [
+                name,
+                suggestion,
+                user_id,
+                username,
+                datetime.now().isoformat(timespec="seconds"),
+            ]
+        )
