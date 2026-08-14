@@ -16,7 +16,24 @@ from __future__ import annotations
 import json
 import random
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
+
+# Google Sheets auto-converts recognizable date text into its own Date type
+# and displays it per the spreadsheet's locale — a cell typed as
+# "2026-09-13" can come back as "13.09.2026" (and vice versa) regardless of
+# what was entered. Accept both rather than fighting the spreadsheet's
+# formatting.
+_DATE_FORMATS = ("%Y-%m-%d", "%d.%m.%Y", "%d/%m/%Y")
+
+
+def _parse_date(raw: str) -> date | None:
+    raw = raw.strip()
+    for fmt in _DATE_FORMATS:
+        try:
+            return datetime.strptime(raw, fmt).date()
+        except ValueError:
+            continue
+    return None
 
 import gspread
 from google.oauth2.service_account import Credentials
@@ -112,28 +129,30 @@ class SheetsService:
     def list_upcoming_meetings(self) -> list[Meeting]:
         rows = self._meetings_ws.get_all_records()
         today = datetime.now().date()
-        meetings: list[Meeting] = []
+        parsed: list[tuple[date, str, Meeting]] = []
         for row in rows:
             raw_date = str(row.get("date", "")).strip()
-            try:
-                meeting_date = datetime.strptime(raw_date, "%Y-%m-%d").date()
-            except ValueError:
+            meeting_date = _parse_date(raw_date)
+            if meeting_date is None or meeting_date < today:
                 continue
-            if meeting_date < today:
-                continue
-            meetings.append(
-                Meeting(
-                    id=str(row.get("id", "")),
-                    title=str(row.get("title", "")),
-                    date=raw_date,
-                    time=str(row.get("time", "")),
-                    location=str(row.get("location", "")),
-                    capacity=int(row.get("capacity") or 0),
-                    description=str(row.get("description", "")),
+            time = str(row.get("time", ""))
+            parsed.append(
+                (
+                    meeting_date,
+                    time,
+                    Meeting(
+                        id=str(row.get("id", "")),
+                        title=str(row.get("title", "")),
+                        date=raw_date,
+                        time=time,
+                        location=str(row.get("location", "")),
+                        capacity=int(row.get("capacity") or 0),
+                        description=str(row.get("description", "")),
+                    ),
                 )
             )
-        meetings.sort(key=lambda m: (m.date, m.time))
-        return meetings
+        parsed.sort(key=lambda item: (item[0], item[1]))
+        return [meeting for _, _, meeting in parsed]
 
     def get_meeting(self, meeting_id: str) -> Meeting | None:
         for meeting in self.list_upcoming_meetings():
