@@ -18,13 +18,13 @@ from bot.handlers.registration import sheets  # noqa: E402
 router = Router(name="about")
 
 ABOUT_TEXT = (
-    "Томик — бот, который поможет не только подобрать книгу, но и вдохновит "
-    "на саморазвитие.\n"
+    '<b><a href="https://t.me/BookPBP_Bot">Томик</a></b> — бот, который '
+    "поможет не только подобрать книгу, но и вдохновит на саморазвитие.\n"
     "Проект создан в рамках <b>книжного клуба «ВМЕСТЕ»</b> — это "
     'коллаборация <a href="https://t.me/pagebypageSN">Page by Page</a> и '
     '<a href="https://t.me/study_with_my_little_moon">My little moon</a>.\n\n'
-    "<i>Хотите помочь сделать бота ещё лучше?</i>\n\n"
-    "Поделитесь своими идеями — мы будем рады любым предложениям!"
+    "<i>Хотите помочь сделать бота ещё лучше?\n"
+    "Поделитесь своими идеями — мы будем рады любым предложениям!</i>"
 )
 
 # No public contacts yet — update this once they're available.
