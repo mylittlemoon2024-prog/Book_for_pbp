@@ -27,11 +27,13 @@ ABOUT_TEXT = (
     "Поделитесь своими идеями — мы будем рады любым предложениям!</i>"
 )
 
-# No public contacts yet — update this once they're available.
+# Тел./Почта/TG intentionally left blank for now — fill in once available.
 COOPERATION_TEXT = (
-    "🤝 Сотрудничество\n\n"
-    "Пока мы не публикуем контакты для сотрудничества — раздел скоро "
-    "обновится. Загляните сюда чуть позже!"
+    "<b>По вопросам сотрудничества:</b>\n\n"
+    "<i>Александрина</i>\n"
+    "Тел.:\n"
+    "Почта:\n"
+    "TG:"
 )
 
 SUGGESTION_THANKS_TEXT = "Спасибо!\nМы обязательно изучим ваше предложение 💛"
