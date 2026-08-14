@@ -34,7 +34,7 @@ COOPERATION_TEXT = (
     "обновится. Загляните сюда чуть позже!"
 )
 
-SUGGESTION_THANKS_TEXT = "Спасибо! Мы обязательно прочитаем ваше предложение 💛"
+SUGGESTION_THANKS_TEXT = "Спасибо!\nМы обязательно изучим ваше предложение 💛"
 
 
 @router.callback_query(F.data == "about_project")
