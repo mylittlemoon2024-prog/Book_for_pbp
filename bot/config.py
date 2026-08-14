@@ -26,6 +26,7 @@ class Settings:
     bot_token: str
     spreadsheet_id: str
     google_credentials_path: str
+    google_credentials_json: str
     meetings_sheet: str
     registrations_sheet: str
     books_sheet: str
@@ -36,6 +37,10 @@ settings = Settings(
     bot_token=_require("BOT_TOKEN"),
     spreadsheet_id=_require("SPREADSHEET_ID"),
     google_credentials_path=os.getenv("GOOGLE_CREDENTIALS_PATH", "credentials.json"),
+    # Either GOOGLE_CREDENTIALS_PATH (a file, for local/Docker Compose use) or
+    # GOOGLE_CREDENTIALS_JSON (the key's raw JSON content, for hosts with no
+    # file mounting like Railway) must resolve to a real service account key.
+    google_credentials_json=os.getenv("GOOGLE_CREDENTIALS_JSON", ""),
     meetings_sheet=os.getenv("MEETINGS_SHEET", "Meetings"),
     registrations_sheet=os.getenv("REGISTRATIONS_SHEET", "Registrations"),
     books_sheet=os.getenv("BOOKS_SHEET", "Books"),

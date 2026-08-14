@@ -12,6 +12,7 @@ to avoid blocking the bot's event loop.
 """
 from __future__ import annotations
 
+import json
 import random
 from dataclasses import dataclass
 from datetime import datetime
@@ -73,9 +74,15 @@ class SheetsService:
     """Reads/writes meetings and registrations stored in a Google Sheet."""
 
     def __init__(self) -> None:
-        creds = Credentials.from_service_account_file(
-            settings.google_credentials_path, scopes=SCOPES
-        )
+        if settings.google_credentials_json:
+            # Some hosts (e.g. Railway) have no way to mount a secret file —
+            # the key is passed as the raw JSON content of an env var instead.
+            info = json.loads(settings.google_credentials_json)
+            creds = Credentials.from_service_account_info(info, scopes=SCOPES)
+        else:
+            creds = Credentials.from_service_account_file(
+                settings.google_credentials_path, scopes=SCOPES
+            )
         client = gspread.authorize(creds)
         spreadsheet = client.open_by_key(settings.spreadsheet_id)
         self._meetings_ws = self._get_or_create(
