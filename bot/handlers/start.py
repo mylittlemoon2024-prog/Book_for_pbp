@@ -19,5 +19,8 @@ async def cmd_start(message: Message) -> None:
 
 @router.callback_query(F.data == "main_menu")
 async def cb_main_menu(callback: CallbackQuery) -> None:
-    await callback.message.edit_text(WELCOME_TEXT, reply_markup=main_menu_kb())
+    # The previous screen may be a photo (book card), which can't be edited
+    # back into plain text — delete and send a fresh message instead.
+    await callback.message.delete()
+    await callback.message.answer(WELCOME_TEXT, reply_markup=main_menu_kb())
     await callback.answer()

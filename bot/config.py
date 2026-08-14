@@ -28,6 +28,7 @@ class Settings:
     google_credentials_path: str
     meetings_sheet: str
     registrations_sheet: str
+    books_sheet: str
     admin_ids: tuple[int, ...]
 
 
@@ -37,5 +38,6 @@ settings = Settings(
     google_credentials_path=os.getenv("GOOGLE_CREDENTIALS_PATH", "credentials.json"),
     meetings_sheet=os.getenv("MEETINGS_SHEET", "Meetings"),
     registrations_sheet=os.getenv("REGISTRATIONS_SHEET", "Registrations"),
+    books_sheet=os.getenv("BOOKS_SHEET", "Books"),
     admin_ids=_load_admin_ids(),
 )
