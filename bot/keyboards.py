@@ -76,3 +76,11 @@ def cancel_fsm_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.button(text="Отмена", callback_data="main_menu")
     return builder.as_markup()
+
+
+def consent_kb(agree_callback_data: str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text="✅ Согласен(на), продолжить", callback_data=agree_callback_data)
+    builder.button(text="❌ Отмена", callback_data="main_menu")
+    builder.adjust(1)
+    return builder.as_markup()

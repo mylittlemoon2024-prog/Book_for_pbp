@@ -7,7 +7,7 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from bot.keyboards import about_kb, back_to_menu_kb, cancel_fsm_kb, main_menu_kb
+from bot.keyboards import about_kb, back_to_menu_kb, cancel_fsm_kb, consent_kb, main_menu_kb
 from bot.states import SuggestionForm
 
 # Imported here (rather than at the top with the rest) to reuse the single
@@ -36,6 +36,14 @@ COOPERATION_TEXT = (
 
 SUGGESTION_THANKS_TEXT = "Спасибо!\nМы обязательно изучим ваше предложение 💛"
 
+SUGGESTION_CONSENT_TEXT = (
+    "Для отправки предложения нужно ваше имя.\n\n"
+    "Нажимая «Согласен(на)», вы даёте согласие на обработку персональных "
+    "данных (имя, текст предложения, Telegram username) в соответствии с "
+    "ФЗ №152-ФЗ «О персональных данных». Данные используются только для "
+    "рассмотрения предложения и не передаются третьим лицам."
+)
+
 
 @router.callback_query(F.data == "about_project")
 async def cb_about_project(callback: CallbackQuery) -> None:
@@ -52,7 +60,16 @@ async def cb_cooperation(callback: CallbackQuery) -> None:
 
 
 @router.callback_query(F.data == "leave_suggestion")
-async def cb_leave_suggestion_start(callback: CallbackQuery, state: FSMContext) -> None:
+async def cb_leave_suggestion_start(callback: CallbackQuery) -> None:
+    await callback.message.delete()
+    await callback.message.answer(
+        SUGGESTION_CONSENT_TEXT, reply_markup=consent_kb("suggestion_consent_ok")
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "suggestion_consent_ok")
+async def cb_suggestion_consent_ok(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(SuggestionForm.name)
     await callback.message.delete()
     await callback.message.answer("Как вас зовут?", reply_markup=cancel_fsm_kb())
