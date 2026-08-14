@@ -18,6 +18,11 @@ import random
 from dataclasses import dataclass
 from datetime import date, datetime
 
+import gspread
+from google.oauth2.service_account import Credentials
+
+from bot.config import settings
+
 # Google Sheets auto-converts recognizable date text into its own Date type
 # and displays it per the spreadsheet's locale — a cell typed as
 # "2026-09-13" can come back as "13.09.2026" (and vice versa) regardless of
@@ -35,10 +40,6 @@ def _parse_date(raw: str) -> date | None:
             continue
     return None
 
-import gspread
-from google.oauth2.service_account import Credentials
-
-from bot.config import settings
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
@@ -53,6 +54,25 @@ REGISTRATIONS_HEADER = [
     "status",
 ]
 BOOKS_HEADER = ["id", "genre", "title", "author", "description", "photo_url"]
+
+# Fixed genre taxonomy for the "Choose a book" catalog — shown in this exact
+# order regardless of which genres currently have books in the sheet, so the
+# menu stays stable and predictable. A book's `genre` cell must match one of
+# these strings exactly (including capitalization) to show up under it.
+GENRES = (
+    "Проза",
+    "Фантастика",
+    "Детектив и триллер",
+    "Ужасы и мистика",
+    "Любовный жанр",
+    "Приключения",
+    "Драма и трагедия",
+    "Юмор и сатира",
+    "Поэзия",
+    "Драматургия",
+    "Для детей",
+    "Нон-фикшн",
+)
 SUGGESTIONS_HEADER = ["name", "suggestion", "user_id", "username", "submitted_at"]
 
 STATUS_ACTIVE = "active"
@@ -249,10 +269,6 @@ class SheetsService:
                 )
             )
         return books
-
-    def list_genres(self) -> list[str]:
-        genres = {book.genre for book in self.list_books()}
-        return sorted(genres)
 
     def books_by_genre(self, genre: str) -> list[Book]:
         return [book for book in self.list_books() if book.genre == genre]

@@ -8,7 +8,7 @@ from bot.services.sheets import Meeting
 def main_menu_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.button(text="ℹ️ О проекте", callback_data="about_project")
-    builder.button(text="📅 Ближайшие встречи", callback_data="list_meetings")
+    builder.button(text="📅 Записаться на встречу", callback_data="list_meetings")
     builder.button(text="📝 Мои записи", callback_data="my_registrations")
     builder.button(text="📚 Выбрать книгу", callback_data="browse_books")
     builder.button(text="🤝 Сотрудничество", callback_data="cooperation")
@@ -31,7 +31,7 @@ def back_to_menu_kb() -> InlineKeyboardMarkup:
 
 
 def genres_kb(genres: list[str]) -> InlineKeyboardMarkup:
-    # Genres are referenced by their position in the (sorted) list rather than
+    # Genres are referenced by their position in the list rather than
     # embedding the raw text in callback_data — keeps payloads short and safe
     # regardless of how long a genre name is.
     builder = InlineKeyboardBuilder()

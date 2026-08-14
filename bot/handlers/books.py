@@ -6,8 +6,8 @@ from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import CallbackQuery
 
-from bot.keyboards import book_card_kb, genres_kb, main_menu_kb
-from bot.services.sheets import Book
+from bot.keyboards import book_card_kb, genres_kb
+from bot.services.sheets import GENRES, Book
 
 logger = logging.getLogger(__name__)
 router = Router(name="books")
@@ -35,28 +35,18 @@ async def _send_book_card(callback: CallbackQuery, genre: str, genre_idx: int, b
 
 @router.callback_query(F.data == "browse_books")
 async def cb_browse_books(callback: CallbackQuery) -> None:
-    genres = await asyncio.to_thread(sheets.list_genres)
-    if not genres:
-        await callback.message.delete()
-        await callback.message.answer(
-            "Каталог книг пока пуст 🙁", reply_markup=main_menu_kb()
-        )
-        await callback.answer()
-        return
-
     await callback.message.delete()
-    await callback.message.answer("Выберите жанр:", reply_markup=genres_kb(genres))
+    await callback.message.answer("Выберите жанр:", reply_markup=genres_kb(list(GENRES)))
     await callback.answer()
 
 
 @router.callback_query(F.data.startswith("genre_idx:"))
 async def cb_genre_selected(callback: CallbackQuery) -> None:
     idx = int(callback.data.split(":", 1)[1])
-    genres = await asyncio.to_thread(sheets.list_genres)
-    if idx >= len(genres):
+    if idx >= len(GENRES):
         await callback.answer("Этот жанр больше недоступен, откройте список заново", show_alert=True)
         return
-    genre = genres[idx]
+    genre = GENRES[idx]
 
     book = await asyncio.to_thread(sheets.random_book, genre)
     if book is None:
@@ -71,11 +61,10 @@ async def cb_genre_selected(callback: CallbackQuery) -> None:
 async def cb_book_reroll(callback: CallbackQuery) -> None:
     _, idx_str, last_book_id = callback.data.split(":", 2)
     idx = int(idx_str)
-    genres = await asyncio.to_thread(sheets.list_genres)
-    if idx >= len(genres):
+    if idx >= len(GENRES):
         await callback.answer("Этот жанр больше недоступен, откройте список заново", show_alert=True)
         return
-    genre = genres[idx]
+    genre = GENRES[idx]
 
     book = await asyncio.to_thread(sheets.random_book, genre, exclude_id=last_book_id)
     if book is None:
