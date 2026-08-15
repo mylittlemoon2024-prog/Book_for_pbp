@@ -11,6 +11,7 @@ def main_menu_kb() -> InlineKeyboardMarkup:
     builder.button(text="📅 Записаться на встречу", callback_data="list_meetings")
     builder.button(text="📝 Мои записи", callback_data="my_registrations")
     builder.button(text="📚 Выбрать книгу", callback_data="browse_books")
+    builder.button(text="🎓 Лекции", callback_data="browse_lectures")
     builder.button(text="🤝 Контактная информация", callback_data="cooperation")
     builder.adjust(1)
     return builder.as_markup()
@@ -47,6 +48,29 @@ def book_card_kb(genre_idx: int, book_id: str, has_more: bool) -> InlineKeyboard
     if has_more:
         builder.button(text="🔀 Другая книга", callback_data=f"book_reroll:{genre_idx}:{book_id}")
     builder.button(text="⬅️ Другой жанр", callback_data="browse_books")
+    builder.button(text="🏠 В меню", callback_data="main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def lecture_categories_kb(categories: list[str]) -> InlineKeyboardMarkup:
+    # Same positional-index trick as genres_kb — keeps callback_data short
+    # regardless of how long a category name is.
+    builder = InlineKeyboardBuilder()
+    for idx, category in enumerate(categories):
+        builder.button(text=category, callback_data=f"lecture_cat_idx:{idx}")
+    builder.button(text="⬅️ В меню", callback_data="main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def lecture_card_kb(category_idx: int, lecture_id: str, has_more: bool) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    if has_more:
+        builder.button(
+            text="🔀 Другая лекция", callback_data=f"lecture_reroll:{category_idx}:{lecture_id}"
+        )
+    builder.button(text="⬅️ Другое направление", callback_data="browse_lectures")
     builder.button(text="🏠 В меню", callback_data="main_menu")
     builder.adjust(1)
     return builder.as_markup()

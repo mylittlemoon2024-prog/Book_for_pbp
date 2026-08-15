@@ -1,11 +1,12 @@
 """Thin wrapper around Google Sheets used as storage for meetings, registrations,
-the book catalog and user suggestions.
+the book catalog, the lecture catalog and user suggestions.
 
-Four worksheets are used inside a single spreadsheet:
+Five worksheets are used inside a single spreadsheet:
 
 Meetings:       id | title | date (YYYY-MM-DD) | time | location | capacity | description
 Registrations:  meeting_id | user_id | username | full_name | phone | registered_at | status
 Books:          id | genre | title | author | description | photo_url
+Lectures:       id | category | title | speaker | description | video_url
 Suggestions:    name | suggestion | user_id | username | submitted_at
 
 gspread calls are blocking, so callers should run them via asyncio.to_thread
@@ -97,6 +98,21 @@ GENRES = (
     "Для детей",
     "Нон-фикшн",
 )
+LECTURES_HEADER = ["id", "category", "title", "speaker", "description", "video_url"]
+
+# Fixed direction taxonomy for the "Lectures" catalog — same idea as GENRES:
+# shown in this exact order regardless of what's currently in the sheet.
+LECTURE_CATEGORIES = (
+    "Литература и писательство",
+    "Психология",
+    "История",
+    "Философия",
+    "Саморазвитие",
+    "Искусство и культура",
+    "Наука",
+    "Мотивация и карьера",
+)
+
 SUGGESTIONS_HEADER = ["name", "suggestion", "user_id", "username", "submitted_at"]
 
 STATUS_ACTIVE = "active"
@@ -137,6 +153,26 @@ class Book:
         return text
 
 
+@dataclass
+class Lecture:
+    id: str
+    category: str
+    title: str
+    speaker: str
+    description: str
+    video_url: str
+
+    def caption(self) -> str:
+        text = f"<b>{self.title}</b>"
+        if self.speaker:
+            text += f"\n🎤 {self.speaker}"
+        if self.description:
+            text += f"\n\n{self.description}"
+        if self.video_url:
+            text += f"\n\n🎬 Смотреть: {self.video_url}"
+        return text
+
+
 class SheetsService:
     """Reads/writes meetings and registrations stored in a Google Sheet."""
 
@@ -159,6 +195,9 @@ class SheetsService:
             spreadsheet, settings.registrations_sheet, REGISTRATIONS_HEADER
         )
         self._books_ws = self._get_or_create(spreadsheet, settings.books_sheet, BOOKS_HEADER)
+        self._lectures_ws = self._get_or_create(
+            spreadsheet, settings.lectures_sheet, LECTURES_HEADER
+        )
         self._suggestions_ws = self._get_or_create(
             spreadsheet, settings.suggestions_sheet, SUGGESTIONS_HEADER
         )
@@ -309,6 +348,39 @@ class SheetsService:
             return None
         if exclude_id is not None and len(candidates) > 1:
             candidates = [b for b in candidates if b.id != exclude_id]
+        return random.choice(candidates)
+
+    # ---- lecture catalog --------------------------------------------------
+
+    def list_lectures(self) -> list[Lecture]:
+        rows = self._lectures_ws.get_all_records()
+        lectures: list[Lecture] = []
+        for row in rows:
+            category = str(row.get("category", "")).strip()
+            title = str(row.get("title", "")).strip()
+            if not category or not title:
+                continue
+            lectures.append(
+                Lecture(
+                    id=str(row.get("id", "")),
+                    category=category,
+                    title=title,
+                    speaker=str(row.get("speaker", "")),
+                    description=str(row.get("description", "")),
+                    video_url=str(row.get("video_url", "")).strip(),
+                )
+            )
+        return lectures
+
+    def lectures_by_category(self, category: str) -> list[Lecture]:
+        return [lecture for lecture in self.list_lectures() if lecture.category == category]
+
+    def random_lecture(self, category: str, exclude_id: str | None = None) -> Lecture | None:
+        candidates = self.lectures_by_category(category)
+        if not candidates:
+            return None
+        if exclude_id is not None and len(candidates) > 1:
+            candidates = [lec for lec in candidates if lec.id != exclude_id]
         return random.choice(candidates)
 
     # ---- suggestions ------------------------------------------------------
