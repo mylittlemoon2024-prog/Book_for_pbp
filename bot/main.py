@@ -6,7 +6,6 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import LinkPreviewOptions
 
 from bot.config import settings
 from bot.handlers import register_routers
@@ -22,7 +21,7 @@ async def main() -> None:
             # Messages link to t.me/... (own bot, partner channels) — without
             # this, Telegram renders a preview card (name + description)
             # under every such message, which looks cluttered.
-            link_preview_options=LinkPreviewOptions(is_disabled=True),
+            link_preview_is_disabled=True,
         ),
     )
     dp = Dispatcher(storage=MemoryStorage())
