@@ -11,7 +11,7 @@ def main_menu_kb() -> InlineKeyboardMarkup:
     builder.button(text="📅 Записаться на встречу", callback_data="list_meetings")
     builder.button(text="📝 Мои записи", callback_data="my_registrations")
     builder.button(text="📚 Выбрать книгу", callback_data="browse_books")
-    builder.button(text="🤝 Сотрудничество", callback_data="cooperation")
+    builder.button(text="🤝 Контактная информация", callback_data="cooperation")
     builder.adjust(1)
     return builder.as_markup()
 

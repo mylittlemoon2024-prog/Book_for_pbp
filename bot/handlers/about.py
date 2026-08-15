@@ -27,13 +27,15 @@ ABOUT_TEXT = (
     "Поделитесь своими идеями — мы будем рады любым предложениям!</i>"
 )
 
-# Тел./Почта/TG intentionally left blank for now — fill in once available.
 COOPERATION_TEXT = (
     "<b>По вопросам сотрудничества:</b>\n\n"
     "<i>Александрина</i>\n"
-    "Тел.:\n"
-    "Почта:\n"
-    "TG:"
+    "Почта: sasha_kuchurenkova@mail.ru\n"
+    "TG: https://t.me/sasha_crasha\n\n"
+    "<b>По техническим вопросам работы бота:</b>\n\n"
+    "<i>Екатерина</i>\n"
+    "Почта: ikatyivanova2001@gmail.com\n"
+    "TG: https://t.me/hold_on_and_win"
 )
 
 SUGGESTION_THANKS_TEXT = "Спасибо!\nМы обязательно изучим ваше предложение 💛"

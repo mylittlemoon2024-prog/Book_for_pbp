@@ -46,11 +46,12 @@ def _meeting_card_text(meeting: Meeting, taken: int, is_registered: bool, can_ca
         text += "\n\n✅ Вы записаны на эту встречу"
         if can_cancel:
             text += (
-                f"\nОтменить запись можно не позднее чем за "
-                f"{CANCELLATION_CUTOFF_HOURS} ч. до встречи."
+                "\n\n<b>Обратите внимание на то, что:</b>\n"
+                f"отменить запись можно <b>не позднее чем за "
+                f"{CANCELLATION_CUTOFF_HOURS} ч. до встречи</b>."
             )
         else:
-            text += "\n⏰ Срок отмены записи истёк."
+            text += "\n⏰ <b>Срок отмены записи истёк.</b>"
     return text
 
 
