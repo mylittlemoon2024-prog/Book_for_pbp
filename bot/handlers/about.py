@@ -32,7 +32,7 @@ COOPERATION_TEXT = (
     "<i>Александрина</i>\n"
     "Почта: sasha_kuchurenkova@mail.ru\n"
     "TG: https://t.me/sasha_crasha\n\n"
-    "<b>По техническим вопросам работы бота:</b>\n\n"
+    "<b>По вопросам технической работы бота:</b>\n\n"
     "<i>Екатерина</i>\n"
     "Почта: ikatyivanova2001@gmail.com\n"
     "TG: https://t.me/hold_on_and_win"
