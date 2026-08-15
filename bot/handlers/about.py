@@ -18,7 +18,7 @@ from bot.handlers.registration import sheets  # noqa: E402
 router = Router(name="about")
 
 ABOUT_TEXT = (
-    '<b><a href="https://t.me/BookPBP_Bot">Томик</a></b> — бот, который '
+    '<b><a href="https://t.me/BookPBP_Bot">«Славно, да душевно»</a></b> — бот, который '
     "поможет не только подобрать книгу, но и вдохновит на саморазвитие.\n"
     "Проект создан в рамках <b>книжного клуба «ВМЕСТЕ»</b> — это "
     'коллаборация <a href="https://t.me/pagebypageSN">Page by Page</a> и '

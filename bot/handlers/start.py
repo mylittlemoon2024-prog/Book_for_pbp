@@ -8,7 +8,7 @@ router = Router(name="start")
 
 WELCOME_TEXT = (
     "Привет!\n"
-    'Я — <b><a href="https://t.me/BookPBP_Bot">Томик</a></b>, твой верный '
+    'Я — <b><a href="https://t.me/BookPBP_Bot">«Славно, да душевно»</a></b>, твой верный '
     "путеводитель в удивительном мире книг.\n\n"
     "<i>Что тебя интересует?</i>"
 )
