@@ -170,11 +170,59 @@ docker compose up --build -d
 4. Сохраните — Railway задеплоит и запустит бота. При падении процесс
    перезапускается автоматически, отдельно ничего поддерживать не нужно.
 
+### На Google Cloud Run (бесплатный вариант)
+
+Cloud Run — serverless: контейнер спит, пока нет входящих запросов, и
+просыпается на каждый. Из-за этого боту нужен другой режим работы —
+**webhook** (Telegram сам присылает сообщения на URL) вместо long polling.
+Для этого в проекте есть отдельная точка входа `bot/webhook.py` — она не
+трогает `bot/main.py`, которым продолжает пользоваться Railway/Docker.
+
+**Полностью бесплатно** при небольшой нагрузке (у такого лёгкого бота
+трафик далеко не дотягивает до лимита бесплатного тарифа Cloud Run — 2 млн
+запросов и 360 000 ГБ-секунд в месяц).
+
+1. Зайдите на [console.cloud.google.com](https://console.cloud.google.com/),
+   выберите тот же проект, что и для сервисного аккаунта (например
+   `book-club-bot-505502`), либо создайте новый.
+2. В поиске сверху введите **Cloud Run** → откройте → **Create Service**.
+3. Выберите **Continuously deploy from a repository** → подключите GitHub →
+   выберите репозиторий `Book_for_pbp` и ветку.
+4. Cloud Run сам найдёт `Dockerfile` (Build Type: Dockerfile) — ничего
+   менять не нужно.
+5. В разделе **Container(s), Volumes, Networking, Security** → вкладка
+   **Container**:
+   - **Container command**: `python`
+   - **Container arguments**: `-m`, `bot.webhook` (переопределяет команду
+     запуска — по умолчанию контейнер запускает `bot.main`, для Cloud Run
+     нужен именно `bot.webhook`)
+   - **Environment variables** — те же, что и в Railway (см. таблицу выше):
+     `BOT_TOKEN`, `SPREADSHEET_ID`, `GOOGLE_CREDENTIALS_JSON`. `WEBHOOK_URL`
+     пока **не** заполняйте — своего URL сервис ещё не знает.
+6. Во вкладке **Security** (или на первом экране создания) включите
+   **Allow unauthenticated invocations** — иначе Telegram не сможет достучаться
+   до вебхука.
+7. **Create/Deploy**. Сервис запустится (без активного вебхука — это
+   ожидаемо) и получит постоянный публичный URL вида
+   `https://book-club-bot-xxxxx-uc.a.run.app` — скопируйте его сверху
+   страницы сервиса.
+8. Откройте сервис → **Edit & Deploy New Revision** → добавьте переменную
+   **`WEBHOOK_URL`** = этот скопированный URL → **Deploy**.
+9. Проверьте логи сервиса — должна появиться строка `Webhook set to ...`.
+   С этого момента бот отвечает через Cloud Run.
+
+**Важно:** как только вебхук активен, Telegram перестаёт отдавать
+сообщения через long polling — старое развёртывание на Railway перестанет
+получать обновления (хоть и не упадёт с ошибкой). Чтобы не платить за
+ставший ненужным сервис, удалите его в Railway (или хотя бы остановите)
+после того, как убедитесь, что бот на Cloud Run отвечает.
+
 ## Структура проекта
 
 ```
 bot/
-  main.py              — точка входа, запуск polling
+  main.py              — точка входа, запуск polling (Railway/Docker/локально)
+  webhook.py             — точка входа, webhook-режим (Cloud Run и другой serverless)
   config.py             — чтение .env
   states.py             — FSM-состояния формы записи
   keyboards.py          — инлайн-клавиатуры
