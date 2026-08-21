@@ -33,8 +33,6 @@ class Settings:
     lectures_sheet: str
     suggestions_sheet: str
     admin_ids: tuple[int, ...]
-    webhook_url: str
-    port: int
 
 
 settings = Settings(
@@ -51,10 +49,4 @@ settings = Settings(
     lectures_sheet=os.getenv("LECTURES_SHEET", "Lectures"),
     suggestions_sheet=os.getenv("SUGGESTIONS_SHEET", "Suggestions"),
     admin_ids=_load_admin_ids(),
-    # Only needed by bot/webhook.py (serverless hosts like Cloud Run) — the
-    # public base URL Telegram should send updates to, e.g.
-    # https://book-club-bot-xxxxx-uc.a.run.app. Unused by bot/main.py polling.
-    webhook_url=os.getenv("WEBHOOK_URL", ""),
-    # Cloud Run injects PORT; default matches its own default (8080).
-    port=int(os.getenv("PORT", "8080")),
 )
