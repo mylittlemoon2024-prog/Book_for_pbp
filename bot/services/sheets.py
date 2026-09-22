@@ -178,7 +178,7 @@ class SheetsService:
 
     def __init__(self) -> None:
         if settings.google_credentials_json:
-            # Some hosts (e.g. Railway) have no way to mount a secret file —
+            # Some hosts (e.g. Render) have no way to mount a secret file —
             # the key is passed as the raw JSON content of an env var instead.
             info = json.loads(settings.google_credentials_json)
             creds = Credentials.from_service_account_info(info, scopes=SCOPES)

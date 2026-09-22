@@ -41,7 +41,7 @@ settings = Settings(
     google_credentials_path=os.getenv("GOOGLE_CREDENTIALS_PATH", "credentials.json"),
     # Either GOOGLE_CREDENTIALS_PATH (a file, for local/Docker Compose use) or
     # GOOGLE_CREDENTIALS_JSON (the key's raw JSON content, for hosts with no
-    # file mounting like Railway) must resolve to a real service account key.
+    # file mounting like Render) must resolve to a real service account key.
     google_credentials_json=os.getenv("GOOGLE_CREDENTIALS_JSON", ""),
     meetings_sheet=os.getenv("MEETINGS_SHEET", "Meetings"),
     registrations_sheet=os.getenv("REGISTRATIONS_SHEET", "Registrations"),
