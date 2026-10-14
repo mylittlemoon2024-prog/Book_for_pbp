@@ -9,6 +9,7 @@ from aiogram.types import CallbackQuery, Message
 
 from bot.keyboards import about_kb, back_to_menu_kb, cancel_fsm_kb, consent_kb, main_menu_kb
 from bot.states import SuggestionForm
+from bot.tg_safety import safe_delete
 
 # Imported here (rather than at the top with the rest) to reuse the single
 # shared SheetsService instance that registration.py owns — importing it
@@ -51,21 +52,21 @@ SUGGESTION_CONSENT_TEXT = (
 
 @router.callback_query(F.data == "about_project")
 async def cb_about_project(callback: CallbackQuery) -> None:
-    await callback.message.delete()
+    await safe_delete(callback.message)
     await callback.message.answer(ABOUT_TEXT, reply_markup=about_kb())
     await callback.answer()
 
 
 @router.callback_query(F.data == "cooperation")
 async def cb_cooperation(callback: CallbackQuery) -> None:
-    await callback.message.delete()
+    await safe_delete(callback.message)
     await callback.message.answer(COOPERATION_TEXT, reply_markup=back_to_menu_kb())
     await callback.answer()
 
 
 @router.callback_query(F.data == "leave_suggestion")
 async def cb_leave_suggestion_start(callback: CallbackQuery) -> None:
-    await callback.message.delete()
+    await safe_delete(callback.message)
     await callback.message.answer(
         SUGGESTION_CONSENT_TEXT, reply_markup=consent_kb("suggestion_consent_ok")
     )
@@ -75,7 +76,7 @@ async def cb_leave_suggestion_start(callback: CallbackQuery) -> None:
 @router.callback_query(F.data == "suggestion_consent_ok")
 async def cb_suggestion_consent_ok(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(SuggestionForm.name)
-    await callback.message.delete()
+    await safe_delete(callback.message)
     await callback.message.answer("Как вас зовут?", reply_markup=cancel_fsm_kb())
     await callback.answer()
 

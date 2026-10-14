@@ -8,6 +8,7 @@ from aiogram.types import CallbackQuery
 
 from bot.keyboards import book_card_kb, genres_kb
 from bot.services.sheets import GENRES, Book
+from bot.tg_safety import safe_delete
 
 logger = logging.getLogger(__name__)
 router = Router(name="books")
@@ -21,7 +22,7 @@ async def _send_book_card(callback: CallbackQuery, genre: str, genre_idx: int, b
     all_in_genre = await asyncio.to_thread(sheets.books_by_genre, genre)
     kb = book_card_kb(genre_idx, book.id, has_more=len(all_in_genre) > 1)
 
-    await callback.message.delete()
+    await safe_delete(callback.message)
     if book.photo_url:
         try:
             await callback.message.answer_photo(
@@ -35,7 +36,7 @@ async def _send_book_card(callback: CallbackQuery, genre: str, genre_idx: int, b
 
 @router.callback_query(F.data == "browse_books")
 async def cb_browse_books(callback: CallbackQuery) -> None:
-    await callback.message.delete()
+    await safe_delete(callback.message)
     await callback.message.answer("Выберите жанр:", reply_markup=genres_kb(list(GENRES)))
     await callback.answer()
 

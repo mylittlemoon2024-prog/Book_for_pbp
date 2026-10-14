@@ -3,13 +3,13 @@ import asyncio
 from datetime import datetime, timedelta
 
 from aiogram import F, Router
-from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
+from aiogram.types import CallbackQuery, Message
 
 from bot.keyboards import cancel_fsm_kb, consent_kb, main_menu_kb, meeting_card_kb, meetings_list_kb
 from bot.services.sheets import CANCELLATION_CUTOFF_HOURS, Meeting, SheetsService, meeting_datetime
 from bot.states import RegistrationForm
+from bot.tg_safety import safe_edit_text
 
 router = Router(name="registration")
 sheets = SheetsService()
@@ -21,20 +21,6 @@ REGISTRATION_CONSENT_TEXT = (
     "«О персональных данных». Данные используются только для организации "
     "встреч книжного клуба «ВМЕСТЕ» и не передаются третьим лицам."
 )
-
-
-async def _safe_edit_text(
-    message: Message, text: str, reply_markup: InlineKeyboardMarkup | None = None
-) -> None:
-    """Telegram rejects an edit whose text and keyboard are byte-identical to
-    what's already shown — which happens whenever a user reopens a screen
-    they're already on (e.g. tapping "Мои записи" twice in a row). Swallow
-    just that case; any other failure still propagates."""
-    try:
-        await message.edit_text(text, reply_markup=reply_markup)
-    except TelegramBadRequest as exc:
-        if "message is not modified" not in str(exc):
-            raise
 
 
 def _can_cancel(meeting: Meeting) -> bool:
@@ -83,7 +69,7 @@ async def _show_meeting_card(callback: CallbackQuery, meeting_id: str) -> None:
     can_cancel = _can_cancel(meeting)
 
     text = _meeting_card_text(meeting, taken, is_registered=bool(registration), can_cancel=can_cancel)
-    await _safe_edit_text(
+    await safe_edit_text(
         callback.message,
         text,
         reply_markup=meeting_card_kb(
@@ -96,12 +82,12 @@ async def _show_meeting_card(callback: CallbackQuery, meeting_id: str) -> None:
 async def cb_list_meetings(callback: CallbackQuery) -> None:
     meetings = await asyncio.to_thread(sheets.list_upcoming_meetings)
     if not meetings:
-        await _safe_edit_text(
+        await safe_edit_text(
             callback.message, "Ближайших встреч пока нет 🙁", reply_markup=main_menu_kb()
         )
         await callback.answer()
         return
-    await _safe_edit_text(
+    await safe_edit_text(
         callback.message, "Выберите встречу:", reply_markup=meetings_list_kb(meetings)
     )
     await callback.answer()
@@ -159,8 +145,8 @@ async def cb_register_start(callback: CallbackQuery, state: FSMContext) -> None:
         return
 
     await state.update_data(meeting_id=meeting_id)
-    await callback.message.edit_text(
-        REGISTRATION_CONSENT_TEXT, reply_markup=consent_kb("register_consent_ok")
+    await safe_edit_text(
+        callback.message, REGISTRATION_CONSENT_TEXT, reply_markup=consent_kb("register_consent_ok")
     )
     await callback.answer()
 
@@ -168,8 +154,8 @@ async def cb_register_start(callback: CallbackQuery, state: FSMContext) -> None:
 @router.callback_query(F.data == "register_consent_ok")
 async def cb_register_consent_ok(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(RegistrationForm.full_name)
-    await callback.message.edit_text(
-        "Как вас зовут? Напишите имя и фамилию.", reply_markup=cancel_fsm_kb()
+    await safe_edit_text(
+        callback.message, "Как вас зовут? Напишите имя и фамилию.", reply_markup=cancel_fsm_kb()
     )
     await callback.answer()
 
@@ -220,7 +206,7 @@ async def process_phone(message: Message, state: FSMContext) -> None:
 async def cb_my_registrations(callback: CallbackQuery) -> None:
     registrations = await asyncio.to_thread(sheets.list_user_registrations, callback.from_user.id)
     if not registrations:
-        await _safe_edit_text(
+        await safe_edit_text(
             callback.message, "У вас пока нет активных записей.", reply_markup=main_menu_kb()
         )
         await callback.answer()
@@ -232,5 +218,5 @@ async def cb_my_registrations(callback: CallbackQuery) -> None:
         label = meeting.label() if meeting else f"встреча #{reg['meeting_id']}"
         lines.append(f"• {label}")
 
-    await _safe_edit_text(callback.message, "\n".join(lines), reply_markup=main_menu_kb())
+    await safe_edit_text(callback.message, "\n".join(lines), reply_markup=main_menu_kb())
     await callback.answer()

@@ -8,6 +8,7 @@ from aiogram.types import CallbackQuery
 
 from bot.keyboards import lecture_card_kb, lecture_categories_kb
 from bot.services.sheets import LECTURE_CATEGORIES, Lecture
+from bot.tg_safety import safe_edit_text
 
 # Imported here (not at module scope) to reuse the single shared
 # SheetsService instance that registration.py owns, same pattern as
@@ -20,13 +21,15 @@ router = Router(name="lectures")
 async def _send_lecture_card(callback: CallbackQuery, category: str, category_idx: int, lecture: Lecture) -> None:
     all_in_category = await asyncio.to_thread(sheets.lectures_by_category, category)
     kb = lecture_card_kb(category_idx, lecture.id, has_more=len(all_in_category) > 1)
-    await callback.message.edit_text(lecture.caption(), reply_markup=kb)
+    await safe_edit_text(callback.message, lecture.caption(), reply_markup=kb)
 
 
 @router.callback_query(F.data == "browse_lectures")
 async def cb_browse_lectures(callback: CallbackQuery) -> None:
-    await callback.message.edit_text(
-        "Выберите направление:", reply_markup=lecture_categories_kb(list(LECTURE_CATEGORIES))
+    await safe_edit_text(
+        callback.message,
+        "Выберите направление:",
+        reply_markup=lecture_categories_kb(list(LECTURE_CATEGORIES)),
     )
     await callback.answer()
 
