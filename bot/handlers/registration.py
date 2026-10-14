@@ -226,10 +226,9 @@ async def cb_my_registrations(callback: CallbackQuery) -> None:
         await callback.answer()
         return
 
-    meetings = {m.id: m for m in await asyncio.to_thread(sheets.list_upcoming_meetings)}
     lines = ["<b>Ваши записи:</b>"]
     for reg in registrations:
-        meeting = meetings.get(str(reg["meeting_id"]))
+        meeting = await asyncio.to_thread(sheets.get_meeting_any, str(reg["meeting_id"]))
         label = meeting.label() if meeting else f"встреча #{reg['meeting_id']}"
         lines.append(f"• {label}")
 

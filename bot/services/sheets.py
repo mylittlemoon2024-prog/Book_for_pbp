@@ -213,36 +213,43 @@ class SheetsService:
 
     # ---- meetings -----------------------------------------------------
 
-    def list_upcoming_meetings(self) -> list[Meeting]:
+    def _all_meetings(self) -> list[Meeting]:
         rows = self._meetings_ws.get_all_records()
+        return [
+            Meeting(
+                id=str(row.get("id", "")),
+                title=str(row.get("title", "")),
+                date=str(row.get("date", "")).strip(),
+                time=str(row.get("time", "")),
+                location=str(row.get("location", "")),
+                capacity=int(row.get("capacity") or 0),
+                description=str(row.get("description", "")),
+            )
+            for row in rows
+        ]
+
+    def list_upcoming_meetings(self) -> list[Meeting]:
         today = datetime.now().date()
         parsed: list[tuple[date, str, Meeting]] = []
-        for row in rows:
-            raw_date = str(row.get("date", "")).strip()
-            meeting_date = _parse_date(raw_date)
+        for meeting in self._all_meetings():
+            meeting_date = _parse_date(meeting.date)
             if meeting_date is None or meeting_date < today:
                 continue
-            time = str(row.get("time", ""))
-            parsed.append(
-                (
-                    meeting_date,
-                    time,
-                    Meeting(
-                        id=str(row.get("id", "")),
-                        title=str(row.get("title", "")),
-                        date=raw_date,
-                        time=time,
-                        location=str(row.get("location", "")),
-                        capacity=int(row.get("capacity") or 0),
-                        description=str(row.get("description", "")),
-                    ),
-                )
-            )
+            parsed.append((meeting_date, meeting.time, meeting))
         parsed.sort(key=lambda item: (item[0], item[1]))
         return [meeting for _, _, meeting in parsed]
 
     def get_meeting(self, meeting_id: str) -> Meeting | None:
         for meeting in self.list_upcoming_meetings():
+            if meeting.id == meeting_id:
+                return meeting
+        return None
+
+    def get_meeting_any(self, meeting_id: str) -> Meeting | None:
+        """Look up a meeting regardless of whether it's upcoming or already
+        past — used to label a user's existing registrations, which can
+        point at a meeting that already happened."""
+        for meeting in self._all_meetings():
             if meeting.id == meeting_id:
                 return meeting
         return None
