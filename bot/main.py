@@ -1,5 +1,12 @@
-"""Entry point: starts the Telegram bot in long-polling mode."""
-import asyncio
+"""Entry point: serves the Telegram bot via webhook.
+
+Long polling needs the process to be continuously up to receive updates,
+which gives a host with no inbound traffic (e.g. a sleeping free Render
+service) nothing to wake it on. A webhook flips that: Telegram itself
+sends an HTTP POST on every message, which is exactly the inbound
+request that wakes a sleeping free-tier service — no external pinger
+needed.
+"""
 import logging
 import os
 
@@ -7,27 +14,21 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 
 from bot.config import settings
 from bot.handlers import register_routers
 
-
-async def _start_keepalive_server() -> None:
-    """Binds an HTTP port so hosts that only offer free "web service" plans
-    (e.g. Render) see the process as a web server and an external pinger
-    (e.g. cron-job.org hitting this URL every few minutes) can stop it from
-    being put to sleep for inactivity. The bot itself talks to Telegram via
-    long polling and needs no incoming HTTP traffic."""
-    port = int(os.getenv("PORT", "8080"))
-    app = web.Application()
-    app.router.add_get("/", lambda request: web.Response(text="OK"))
-    runner = web.AppRunner(app)
-    await runner.setup()
-    await web.TCPSite(runner, "0.0.0.0", port).start()
+WEBHOOK_PATH = "/webhook"
 
 
-async def main() -> None:
+async def _on_startup(bot: Bot) -> None:
+    webhook_url = os.environ["WEBHOOK_URL"].rstrip("/") + WEBHOOK_PATH
+    await bot.set_webhook(webhook_url, drop_pending_updates=True)
+
+
+def main() -> None:
     logging.basicConfig(level=logging.INFO)
 
     bot = Bot(
@@ -42,11 +43,16 @@ async def main() -> None:
     )
     dp = Dispatcher(storage=MemoryStorage())
     register_routers(dp)
+    dp.startup.register(_on_startup)
 
-    await bot.delete_webhook(drop_pending_updates=True)
-    await _start_keepalive_server()
-    await dp.start_polling(bot)
+    app = web.Application()
+    app.router.add_get("/", lambda request: web.Response(text="OK"))
+    SimpleRequestHandler(dispatcher=dp, bot=bot).register(app, path=WEBHOOK_PATH)
+    setup_application(app, dp, bot=bot)
+
+    port = int(os.getenv("PORT", "8080"))
+    web.run_app(app, host="0.0.0.0", port=port)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
