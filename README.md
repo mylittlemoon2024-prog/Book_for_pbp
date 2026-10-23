@@ -146,41 +146,51 @@ python -m bot.main
 docker compose up --build -d
 ```
 
-Бот работает в режиме webhook — Telegram сам присылает HTTP-запрос на
-сервер при каждом сообщении, специальный "всегда работающий" хостинг не
-нужен. Ниже — полностью бесплатный вариант на Render.
+Бот работает в режиме long polling — специальный хостинг с публичным URL
+не нужен, подойдёт любой постоянно работающий сервер.
 
-### На Render (бесплатный хостинг)
+### На Oracle Cloud Free Tier (бесплатная VPS, без засыпания)
 
-Бесплатный тариф Render — это Web Service: он засыпает без входящих
-HTTP-запросов, но просыпается сам при любом новом запросе. В режиме
-webhook это не проблема — сообщение пользователя в Telegram само и есть
-такой запрос, оно разбудит сервис (первый ответ после простоя будет с
-задержкой ~30 секунд на "холодный старт", дальше — как обычно). Никакой
-внешний пинг для этого не нужен.
+В отличие от бесплатных PaaS (Render и т.п.), Always Free VPS у Oracle
+Cloud не засыпает от простоя — бот работает постоянно, без задержек
+на "холодный старт" и без костылей с пингом.
 
-1. Зайдите на [render.com](https://render.com/), войдите через GitHub.
-2. **New** → **Web Service** → выберите репозиторий `Book_for_pbp`. Render
-   сам найдёт `Dockerfile` и соберёт образ.
-3. Тариф — **Free**. В **Environment Variables** добавьте:
+1. Зарегистрируйтесь на [cloud.oracle.com/free](https://www.oracle.com/cloud/free/)
+   и создайте **Compute Instance** (Image: Ubuntu, Shape: любая с
+   пометкой **Always Free**), сохранив приватный SSH-ключ.
+2. Подключитесь к серверу (например, через **Cloud Shell** в консоли
+   Oracle, если напрямую по SSH достучаться нельзя):
 
-   | Переменная | Значение |
-   |---|---|
-   | `BOT_TOKEN` | токен от BotFather |
-   | `SPREADSHEET_ID` | ID таблицы |
-   | `GOOGLE_CREDENTIALS_JSON` | содержимое `credentials.json` целиком (весь JSON-файл как одна строка/блок) |
-   | `WEBHOOK_URL` | публичный URL сервиса, например `https://book-club-bot-nvz9.onrender.com` (без пути — путь `/webhook` бот добавляет сам) |
+   ```bash
+   ssh -i путь/к/ключу.key ubuntu@<публичный_IP>
+   ```
 
-   Файл на Render не примонтировать, поэтому используется
-   `GOOGLE_CREDENTIALS_JSON`, а не `GOOGLE_CREDENTIALS_PATH` — бот сам
-   поймёт, что использовать. Переменную `PORT` задавать не нужно — Render
-   подставляет её сам, а бот читает её автоматически. `WEBHOOK_URL` можно
-   узнать и прописать только после первого деплоя, когда Render выдаст
-   адрес сервиса — тогда просто передеплойте после добавления переменной.
-4. Сохраните — Render задеплоит бота; при старте он сам регистрирует
-   вебхук в Telegram (`bot.set_webhook`) по адресу `WEBHOOK_URL/webhook`.
-5. При пуше в подключённую ветку Render передеплоивает бота автоматически;
-   при падении процесс перезапускается сам.
+3. Установите Docker и склонируйте репозиторий:
+
+   ```bash
+   curl -fsSL https://get.docker.com | sudo sh
+   sudo usermod -aG docker $USER && newgrp docker
+   git clone https://github.com/mylittlemoon2024-prog/Book_for_pbp.git
+   cd Book_for_pbp
+   ```
+
+4. Создайте `.env` (см. `.env.example`) с `BOT_TOKEN`, `SPREADSHEET_ID` и
+   либо `GOOGLE_CREDENTIALS_PATH=credentials.json` + сам файл
+   `credentials.json` рядом, либо `GOOGLE_CREDENTIALS_JSON` с содержимым
+   ключа одной строкой.
+5. Запустите:
+
+   ```bash
+   docker compose up --build -d
+   ```
+
+   `restart: unless-stopped` в `docker-compose.yml` перезапускает бота
+   автоматически при падении или перезагрузке сервера.
+6. Чтобы обновить код после пуша в репозиторий:
+
+   ```bash
+   git pull && docker compose up --build -d
+   ```
 
 ## Структура проекта
 
@@ -204,8 +214,7 @@ bot/
 
 Текст раздела «Контактная информация» — константа `COOPERATION_TEXT` в
 `bot/handlers/about.py`. Поменяйте текст и задеплойте новую версию
-(изменения кода на Render применяются автоматически при пуше в
-подключённую ветку).
+(`git pull && docker compose up --build -d` на сервере).
 
 ## Дальнейшие идеи
 
